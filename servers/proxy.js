@@ -8,7 +8,13 @@ const fs = require('fs');
 const puppeteer = require("puppeteer"); // 헤드리스 크롬 (https://pptr.dev/) - $ sudo npm install puppeteer --unsafe-perm=true --allow-root
 const express = require('express'); // 너무 무겁다.. Koa 로 변경하자 
 const app = express(); 
-const port = 3291;
+
+const PORT = 3291;
+const TYPE_MOBILE = 'mobile';
+const TYPE_PC = 'pc';
+const TYPE_JSON = 'json';
+const TYPE_TEXT = 'text';
+const TYPE_HTML = 'html';
 
 const browserOpen = async () => {
 	// 브라우저 인스턴스 실행하기
@@ -131,7 +137,9 @@ const pageEvaluate = async (page) => {
 };
 const route = async (page, request, response) => {
 	const { method, protocol, httpVersion, headers, subdomains/*subdomain.xxx.com*/, originalUrl, baseUrl, /*url,*/ path, cookies, params/*url/:값*/, query/*url?parameter*/, body/*post body*/ } = request;
-	let dataType = params['dataType'] || ''; // 응답 데이터 타입 
+	const deviceType = params['deviceType'] || ''; // 디바이스 타입 
+	const dataType = params['dataType'] || ''; // 응답 데이터 타입 
+	const everyType = params['everyType'] || ''; // 디바이스 또는 응답 데이터 타입
 	let url = params['0'] ? `http://${params['0']}` : ''; // 요청 URL
 	let search = request._parsedUrl.search; // ?key=value& ... GET 파라미터 
 	
@@ -141,7 +149,9 @@ const route = async (page, request, response) => {
 	}
 
 	// 페이지 설정 
-	await pageEmulate(page, {devices: puppeteer.devices['iPhone 6']});
+	if([deviceType, everyType].includes(TYPE_MOBILE)) {
+		await pageEmulate(page, {devices: puppeteer.devices['iPhone 6']});
+	}
 	//await pageSetting(page, {});
 
 	// 호출 
@@ -149,11 +159,11 @@ const route = async (page, request, response) => {
 	.then(({response: pageResponse, json, text, html}) => {
 		response.header("Access-Control-Allow-Origin", "*");
 		response.header("Access-Control-Allow-Headers", "X-Requested-With");
-		switch(dataType) {
-			case 'text':
+		switch(dataType || everyType) {
+			case TYPE_TEXT:
 				response.send(text);
 				break;
-			case 'html':
+			case TYPE_HTML:
 				response.send(html);
 				break;
 			default:
@@ -172,13 +182,16 @@ browserOpen()
 .then(page)
 .then(pageEvent)
 .then((page) => {
+	const deviceType = [TYPE_MOBILE, TYPE_PC];
+	const dataType = [TYPE_JSON, TYPE_TEXT, TYPE_HTML];
 	const handler = (request, response) => route(page, request, response);
-	app.get('/proxy/:dataType(json|text|html)/*', handler);
+	app.get(`/proxy/:deviceType(${[...deviceType].join('|')})/:dataType(${[...dataType].join('|')})/*`, handler);
+	app.get(`/proxy/:everyType(${[...deviceType, ...dataType].join('|')})/*`, handler);
 	app.get('/proxy/*', handler);
 });
 
 // server listen
-app.listen(port, () => {
-	console.log('CORS Proxy Server', port);
+app.listen(PORT, () => {
+	console.log('CORS Proxy Server', PORT);
 });
 
