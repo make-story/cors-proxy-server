@@ -11,6 +11,9 @@ services:
     build: 
       context: . # docker build 명령을 실행할 디렉터리 경로
       dockerfile: Dockerfile # 빌드하는 데 사용할 Dockerfile을 지정
+    # local cache에서 해당 image를 찾아서 없으면 위 dockerfile 이용해서 build
+    # image를 적어 놓으면 만들어진 이미지가 해당 이름을 가짐
+    image: makestory/cors-proxy:latest  # goes to youruser DockerHub registry
     #command: # cmd 실행 명령어
     volumes:
       # container의 데이터 휘발성 때문에 데이터를 container가 아닌 호스트에 저장할 때,

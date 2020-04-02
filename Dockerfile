@@ -9,14 +9,13 @@
 FROM node:10.9.0-alpine
 FROM buildkite/puppeteer:latest 
 
-# set working directory - 작업생성 디렉토리 생성 및 고정
+# set working directory - 작업 디렉토리 생성 및 고정
 # Dockerfile의 모든 명령어는 기본적으로 /(루트) 디렉토리에서 실행
 # 1. Dockerfile의 각 줄은 경로를 공유하지 않는다. 
 # 즉, 명시적으로 WORKDIR 명령어를 통해 새로운 루트 경로를 설정하지 않는 이상 경로는 /에 고정됩니다.
 # 2. WORKDIR을 사용하면 경로를 고정할 수 있다.
 # 만약 같은 경로에서 여러 작업을 해야한다면 WORKDIR을 사용할 수 있습니다.
 # 3. 왼쪽은 호스트 머신의 파일 경로, 오른쪽은 컨테이너의 파일 경로
-#COPY . /app/
 WORKDIR /app
 
 # `/app/node_modules/.bin`을 $PATH 에 추가
@@ -26,11 +25,11 @@ ENV PATH /app/node_modules/.bin:$PATH
 # app dependencies, install 및 caching
 # 여기서 왼쪽은 호스트 파일의 경로, 오른쪽은 컨테이너의 파일 경로가 됩니다.
 # 즉, 현재 프로젝트 디렉토리의 package.json이 컨테이너의 app 폴더 아래에 복사됩니다.
-#COPY package.json /app/package.json
-COPY package*.json ./
+COPY package.json /app/package.json
+#COPY package*.json ./
 
 # package.json 의존성 모듈 install
-# RUN 명령어는 배열['npm', 'install']로도 사용할 수 있습니다.
+# RUN 명령어는 배열['npm', 'install'] 형태로도 사용할 수 있습니다.
 # <npm 사용방식>
 #RUN npm install --unsafe-perm=true --allow-root
 # <yarn 사용방식>
@@ -41,13 +40,15 @@ RUN npm i -g yarn && yarn install
 #RUN yarn global add nodemon
 
 # src 폴더 아래의 코드 복사
+COPY . /app/
 #COPY ./src/ /app/
 
 # 앱 실행
+CMD ["node", "servers/proxy.js"]
 # <npm 사용방식>
 #CMD ["npm", "start"]
 # <yarn 사용방식>
-CMD ["yarn", "start"]
+#CMD ["yarn", "start"]
 
 # 도커관련 설정(Dockerfile - 현재파일)을 참고해 이미지 생성 명령
 # $ docker build -t cors-proxy-server:dev .

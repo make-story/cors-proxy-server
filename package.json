@@ -1,15 +1,13 @@
 {
   "name": "cors-proxy-server.git",
   "version": "1.0.0",
-  "main": "index.js",
   "dependencies": {
     "puppeteer": "^2.1.1",
     "axios": "^0.19.2",
-    "express": "^4.17.1",
-    "nodemon": "^2.0.2"
+    "express": "^4.17.1"
   },
   "scripts": {
-    "start": "nodemon servers/proxy.js"
+    "start": "node servers/proxy.js"
   },
   "repository": "https://github.com/make-story/cors-proxy-server.git",
   "author": "Yu Sung-min",
