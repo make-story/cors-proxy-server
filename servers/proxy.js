@@ -119,13 +119,21 @@ const pageGoto = async (page, url='') => {
 		waitUntil: "networkidle0"
 	});
 	const html = await page.content();
+	//console.log(TYPE_HTML, html);
 	//console.log('status', response.status()); // 응답 코드 
 	//console.log('headers', response.headers()); // 응답 헤더 
 	//console.log('fromCache', response.fromCache()); // 브라우저 캐시에서 반환여부
 	//console.log('fromServiceWorker', response.fromServiceWorker()); // 서비스워커에서 반환여부
 	if(response.ok()) { // 응답 성공여부 status in the range 200-299
 		const text = await response.text();
-		const json = await response.json();
+		//console.log(TYPE_TEXT, text);
+		let json = {};
+		try {
+			json = await response.json();
+		}catch(e) {
+			json = {};
+		}
+		//console.log(TYPE_JSON, json);
 		return Promise.resolve({response, html, json, text});
 	}else {
 		return Promise.reject(response.status());
@@ -137,9 +145,7 @@ const pageEvaluate = async (page) => {
 };
 const route = async (page, request, response) => {
 	const { method, protocol, httpVersion, headers, subdomains/*subdomain.xxx.com*/, originalUrl, baseUrl, /*url,*/ path, cookies, params/*url/:값*/, query/*url?parameter*/, body/*post body*/ } = request;
-	const deviceType = params['deviceType'] || ''; // 디바이스 타입 
-	const dataType = params['dataType'] || ''; // 응답 데이터 타입 
-	const everyType = params['everyType'] || ''; // 디바이스 또는 응답 데이터 타입
+	const { deviceType=''/*디바이스 타입 */, dataType=''/*응답 데이터 타입*/, everyType=''/*디바이스 또는 응답 데이터 타입*/ } = params;
 	let url = params['0'] ? `http://${params['0']}` : ''; // 요청 URL
 	let search = request._parsedUrl.search; // ?key=value& ... GET 파라미터 
 	
