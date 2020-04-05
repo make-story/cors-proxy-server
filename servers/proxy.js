@@ -7,6 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const puppeteer = require("puppeteer"); // 헤드리스 크롬 (https://pptr.dev/) - $ sudo npm install puppeteer --unsafe-perm=true --allow-root
 const express = require('express'); // 너무 무겁다.. Koa 로 변경하자 
+//const cors = require('cors'); // CORS 미들웨어 
 const app = express(); 
 
 const PORT = 3291;
@@ -197,6 +198,7 @@ browserOpen()
 });
 
 // server listen
+//app.use(cors()); // CORS 미들웨어 추가
 app.listen(PORT, () => {
 	console.log('CORS Proxy Server', PORT);
 });

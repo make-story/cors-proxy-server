@@ -18,6 +18,8 @@ FROM buildkite/puppeteer:latest
 # 3. 왼쪽은 호스트 머신의 파일 경로, 오른쪽은 컨테이너의 파일 경로
 WORKDIR /app
 
+# 환경 변수를 설정합니다. 
+# ENV로 설정한 환경 변수는 RUN, CMD, ENTRYPOINT 에 적용됩니다.
 # `/app/node_modules/.bin`을 $PATH 에 추가
 ENV PATH /app/node_modules/.bin:$PATH
 #ENV PATH="${PATH}:/node_modules/.bin"
@@ -43,7 +45,11 @@ RUN npm i -g yarn && yarn install
 COPY . /app/
 #COPY ./src/ /app/
 
+# 접근 포트 설정
+#EXPOSE 3000 3000
+
 # 앱 실행
+# CMD 명령은 Dockerfile 에서 한번만 사용 가능
 CMD ["node", "servers/proxy.js"]
 # <npm 사용방식>
 #CMD ["npm", "start"]
