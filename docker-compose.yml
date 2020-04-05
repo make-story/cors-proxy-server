@@ -17,7 +17,7 @@ services:
     #command: # cmd 실행 명령어
     volumes:
       # container의 데이터 휘발성 때문에 데이터를 container가 아닌 호스트에 저장할 때,
-      # 또는 container끼리 데이터를 공유할 때 Volume를 사용
+      # 또는 container 끼리 데이터를 공유할 때 Volume를 사용
       - ".:/app"
       - "/app/node_modules"
     ports: 
@@ -29,6 +29,9 @@ services:
       - NODE_ENV=development
     networks: 
       # 각 컨테이너를 연결하는 네트워크
+      # 도커 1.9.0 버전부터 네트워크를 생성할 수 있는 기능이 정식으로 추가되었습니다. 
+      # 이때 네트워크를 생성하고 컨테이너를 연결시키면 해당 네트워크 안에 속한 컨테이너끼리는 서로 접속할 수 있습니다.
+      # 추후 --link 옵션은 사라질 예정 (기존 --link 를 통해 컨테이너간 연결 설정)
       - backend
 
 networks: 
