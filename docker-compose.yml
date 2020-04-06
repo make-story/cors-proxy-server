@@ -16,8 +16,12 @@ services:
     image: makestory/cors-proxy:latest  # goes to youruser DockerHub registry
     #command: # cmd 실행 명령어
     volumes:
+      # 일반적으로 docker container는 컨테이너 내부에 데이터를 관리하므로, 컨테이너가 파기되면 데이터가 모두 날라가게 된다.
       # container의 데이터 휘발성 때문에 데이터를 container가 아닌 호스트에 저장할 때,
-      # 또는 container 끼리 데이터를 공유할 때 Volume를 사용
+      # 또는 container끼리 데이터를 공유할 때 Volume를 사용
+      # docker-compose.yml 를 이용한 volumes 설정은 상대 경로로 가능 
+      # -v <호스트 디렉토리>:<컨테이너 디렉토리> : 로컬 디렉터리의 특정 경로를 컨테이너 내부로 마운트
+      # --volumes-from <컨테이너 이름> : -v가 설정된 컨테이너의 볼륨을 같이 공유 (다른 컨테이너에 연결)
       - ".:/app"
       - "/app/node_modules"
     ports: 
@@ -26,17 +30,18 @@ services:
       - "3291:3291"
     environment: 
       # 환경변수 설정
+      # -e MONGODB_HOST=mongo
       - NODE_ENV=development
     networks: 
-      # 각 컨테이너를 연결하는 네트워크
-      # 도커 1.9.0 버전부터 네트워크를 생성할 수 있는 기능이 정식으로 추가되었습니다. 
-      # 이때 네트워크를 생성하고 컨테이너를 연결시키면 해당 네트워크 안에 속한 컨테이너끼리는 서로 접속할 수 있습니다.
+      # 각 컨테이너를 동일한 네트워크 명으로 연결가능하도록 설정
+      # 도커 1.9.0 버전부터 네트워크를 생성할 수 있는 기능이 정식으로 추가되었음
+      # 이때 네트워크를 생성하고 컨테이너를 연결시키면 해당 네트워크 안에 속한 컨테이너끼리는 서로 접속할 수 있음
       # 추후 --link 옵션은 사라질 예정 (기존 --link 를 통해 컨테이너간 연결 설정)
       - backend
 
 networks: 
   backend:
-    # 가장 기본적인 bridge 네트워크
+    # docker 의 networks default 설정은 bridge 방식
     driver: bridge
 
 # $ docker-compose build # 새로운 변경사항을 반영
