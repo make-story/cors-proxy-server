@@ -29,16 +29,16 @@ const browserOpen = async () => {
 	});
 	return Promise.resolve(browser);
 };
-const browserClose = async (browser) => {
+const browserClose = async browser => {
 	// 브라우저 인스턴스 종료
 	return Promise.resolve(await browser.close());
 };
-const browserContext = async (browser) => {
+const browserContext = async browser => {
 	// 브라우징 콘텍스트 생성하기 (사용자별로 독립된 공간)
 	let browserContext = await browser.createIncognitoBrowserContext();
 	return Promise.resolve(browserContext);
 };
-const page = async (browserContext) => {
+const pageOpen = async browserContext => {
 	// 페이지 생성하기 (탭에 해당)
 	let page = await browserContext.newPage();
 	await page.setRequestInterception(true); // request 중간 조건에 따라 중지/계속 처리 여부
@@ -49,12 +49,16 @@ const page = async (browserContext) => {
 	});*/
 	return Promise.resolve(page);
 };
-const pageEvent = async (page) => {
+const pageClose = async page => {
+	return Promise.resolve(await page.close());
+}
+const pageEvent = async page => {
 	// 페이지 이벤트 설정 
 	//page.on('console', msg => console.log(`page console log: ${msg.text()}`)); // 이벤트: 브라우저 콘솔 로그
 	page.on('request', (request) => {
 		const headers = request.headers();
 		delete headers.host; // 크롬 정책에 따라 host 변경시 에러 발생 
+		// setRequestInterception 설정에 따라 멈춤/실행 제어 가능 
 		request.continue({
 			headers
 		});
@@ -66,7 +70,7 @@ const pageEvent = async (page) => {
 
 	});
 	page.on('response', (response) => {
-		
+		//console.log('response', response);
 	});
 	page.on('pageerror', (error) => {
 		console.error('page whoops!', error);
@@ -79,7 +83,7 @@ const pageEvent = async (page) => {
 	});
 	return Promise.resolve(page);
 }
-const pageEventRemove = async (page) => {
+const pageEventRemove = async page => {
 	//page.removeListener('request', <listener>);
 };
 const pageEmulate = async (page, {devices, userAgent, viewport}={}) => {
@@ -99,6 +103,13 @@ const pageEmulate = async (page, {devices, userAgent, viewport}={}) => {
 			hasTouch: false, // 뷰포트가 터치 이벤트를 지원하는지 여부
 			isLandscape: false, // 뷰포트가 가로 모드인지를 지정
 		}, viewport));
+	}
+	return Promise.resolve(page);
+};
+const pageHeaders = async (page, headers={}) => {
+	if(Object.keys(headers).length) {
+		headers.host && delete headers.host;
+		await page.setExtraHTTPHeaders(headers);
 	}
 	return Promise.resolve(page);
 };
@@ -140,16 +151,19 @@ const pageGoto = async (page, url='') => {
 		return Promise.reject(response.status());
 	}
 };
-const pageEvaluate = async (page) => {
+const pageEvaluate = async page => {
 	await page.evaluate(() => console.log(`href: ${window.location.href}`)); // 브라우저 내에서 코드 실행
 	return Promise.resolve(page);
 };
 const route = async (page, request, response) => {
-	const { method, protocol, httpVersion, headers, subdomains/*subdomain.xxx.com*/, originalUrl, baseUrl, /*url,*/ path, cookies, params/*url/:값*/, query/*url?parameter*/, body/*post body*/ } = request;
+	const { method, protocol, httpVersion, headers/*{}형태*/, rawHeaders/*[]형태*/, subdomains/*subdomain.xxx.com*/, originalUrl, baseUrl, /*url,*/ path, cookies, params/*url/:값*/, query/*url?parameter*/, body/*post body*/ } = request;
 	const { deviceType=''/*디바이스 타입 */, dataType=''/*응답 데이터 타입*/, everyType=''/*디바이스 또는 응답 데이터 타입*/ } = params;
 	let url = params['0'] ? `http://${params['0']}` : ''; // 요청 URL
 	let search = request._parsedUrl.search; // ?key=value& ... GET 파라미터 
 	
+	//console.log('headers', headers);
+	//console.log('cookies', cookies);
+
 	// 유효성 검사 
 	if(!url) {
 		return response.send('');
@@ -160,6 +174,7 @@ const route = async (page, request, response) => {
 		await pageEmulate(page, {devices: puppeteer.devices['iPhone 6']});
 	}
 	//await pageSetting(page, {});
+	await pageHeaders(page, headers);
 
 	// 호출 
 	pageGoto(page, search ? `${url}${search}` : url)
@@ -186,7 +201,7 @@ const route = async (page, request, response) => {
 
 browserOpen()
 .then(browserContext)
-.then(page)
+.then(pageOpen)
 .then(pageEvent)
 .then((page) => {
 	const deviceType = [TYPE_MOBILE, TYPE_PC];
