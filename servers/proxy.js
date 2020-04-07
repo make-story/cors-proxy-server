@@ -108,16 +108,18 @@ const pageEmulate = async (page, {devices, userAgent, viewport}={}) => {
 };
 const pageHeaders = async (page, headers={}) => {
 	if(Object.keys(headers).length) {
-		headers.host && delete headers.host;
 		await page.setExtraHTTPHeaders(headers);
 	}
 	return Promise.resolve(page);
 };
-const pageSetting = async (page, {scriptTag={}, styleTag={}, cookies={}, offline=false}={}) => {
-	//await page.addScriptTag(scriptTag); // {url, path, content, type}
-	//await page.addStyleTag(styleTag); // {url, path, content}
-	//await page.setCookie(cookies); // {name: 필수, value: 필수, url, domain, path, expires, httpOnly, secure, sameSite}
-	//await page.setOfflineMode(offline);
+const pageCookies = async (page, cookies={}) => {
+	await page.setCookie(cookies); // {name: 필수, value: 필수, url, domain, path, expires, httpOnly, secure, sameSite}
+	return Promise.resolve(page);
+};
+const pageSetting = async (page, {scriptTag={}, styleTag={}, offline=false}={}) => {
+	await page.addScriptTag(scriptTag); // {url, path, content, type}
+	await page.addStyleTag(styleTag); // {url, path, content}
+	await page.setOfflineMode(offline);
 	return Promise.resolve(page);
 };
 const pageGoto = async (page, url='') => {
@@ -161,6 +163,7 @@ const route = async (page, request, response) => {
 	let url = params['0'] ? `http://${params['0']}` : ''; // 요청 URL
 	let search = request._parsedUrl.search; // ?key=value& ... GET 파라미터 
 	
+	//console.log('request', request);
 	//console.log('headers', headers);
 	//console.log('cookies', cookies);
 
@@ -169,12 +172,13 @@ const route = async (page, request, response) => {
 		return response.send('');
 	}
 
-	// 페이지 설정 
+	// 페이지 설정 (과거 페이지 호출당시의 설정 남아있는지 주의)
+	//await pageHeaders(page, headers);
+	//await pageCookies(page, {});
+	//await pageSetting(page, {});
 	if([deviceType, everyType].includes(TYPE_MOBILE)) {
 		await pageEmulate(page, {devices: puppeteer.devices['iPhone 6']});
 	}
-	//await pageSetting(page, {});
-	await pageHeaders(page, headers);
 
 	// 호출 
 	pageGoto(page, search ? `${url}${search}` : url)
