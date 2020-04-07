@@ -172,7 +172,7 @@ const route = async (page, request, response) => {
 		return response.send('');
 	}
 
-	// 페이지 설정 (과거 페이지 호출당시의 설정 남아있는지 주의)
+	// 페이지 설정 (과거 페이지 호출당시의 설정 존재 주의)
 	//await pageHeaders(page, headers);
 	//await pageCookies(page, {});
 	//await pageSetting(page, {});
