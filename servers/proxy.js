@@ -17,6 +17,10 @@ const TYPE_JSON = 'json';
 const TYPE_TEXT = 'text';
 const TYPE_HTML = 'html';
 
+// unable to verify the first certificate 에러 발생할 경우 설정
+// SSL validate 과정에서 실패하면 해당 오류 발생, SSL validate 를 하지 않겠다는 설정으로 진행 (주의!)
+//process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
+
 const browserOpen = async () => {
 	// 브라우저 인스턴스 실행하기
 	let browser = await puppeteer.launch({
@@ -51,17 +55,20 @@ const pageOpen = async browserContext => {
 };
 const pageClose = async page => {
 	return Promise.resolve(await page.close());
-}
+};
 const pageEvent = async page => {
 	// 페이지 이벤트 설정 
-	//page.on('console', msg => console.log(`page console log: ${msg.text()}`)); // 이벤트: 브라우저 콘솔 로그
+	//page.on('console', msg => console.log(`page console log: ${msg.text()}`)); // 브라우저내 출력되는 콘솔 로그
 	page.on('request', (request) => {
 		const headers = request.headers();
+		//console.log('request', request);
+		//console.log('request headers', headers);
+
 		delete headers.host; // 크롬 정책에 따라 host 변경시 에러 발생 
+		//delete headers.origin;
+
 		// setRequestInterception 설정에 따라 멈춤/실행 제어 가능 
-		request.continue({
-			headers
-		});
+		request.continue({ headers });
 	});
 	page.on('requestfailed', (request) => {
 
@@ -70,19 +77,21 @@ const pageEvent = async page => {
 
 	});
 	page.on('response', (response) => {
+		//const headers = response.headers();
 		//console.log('response', response);
+		//console.log('response headers', headers);
 	});
 	page.on('pageerror', (error) => {
-		console.error('page whoops!', error);
+		console.error('page error!', error);
 	});
 	page.on('close', () => {
-		console.log('page close!');
+		console.log('page close...');
 	});
 	page.on('error', (error) => {
 		console.error('error!', error);
 	});
 	return Promise.resolve(page);
-}
+};
 const pageEventRemove = async page => {
 	//page.removeListener('request', <listener>);
 };
@@ -116,6 +125,12 @@ const pageCookies = async (page, cookies={}) => {
 	await page.setCookie(cookies); // {name: 필수, value: 필수, url, domain, path, expires, httpOnly, secure, sameSite}
 	return Promise.resolve(page);
 };
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication
+// 407 (Proxy Authentication Required)
+const pageAuthenticate = async (page, credentials={}) => {
+	await page.authenticate(credentials); // { username: '', password: '' }
+	return Promise.resolve(page);
+};
 const pageSetting = async (page, {scriptTag={}, styleTag={}, offline=false}={}) => {
 	await page.addScriptTag(scriptTag); // {url, path, content, type}
 	await page.addStyleTag(styleTag); // {url, path, content}
@@ -133,11 +148,14 @@ const pageGoto = async (page, url='') => {
 		waitUntil: "networkidle0"
 	});
 	const html = await page.content();
+
 	//console.log(TYPE_HTML, html);
 	//console.log('status', response.status()); // 응답 코드 
 	//console.log('headers', response.headers()); // 응답 헤더 
 	//console.log('fromCache', response.fromCache()); // 브라우저 캐시에서 반환여부
 	//console.log('fromServiceWorker', response.fromServiceWorker()); // 서비스워커에서 반환여부
+
+	// 상태확인 
 	if(response.ok()) { // 응답 성공여부 status in the range 200-299
 		const text = await response.text();
 		//console.log(TYPE_TEXT, text);
@@ -158,22 +176,38 @@ const pageEvaluate = async page => {
 	return Promise.resolve(page);
 };
 const route = async (page, request, response) => {
-	const { method, protocol, httpVersion, headers/*{}형태*/, rawHeaders/*[]형태*/, subdomains/*subdomain.xxx.com*/, originalUrl, baseUrl, /*url,*/ path, cookies, params/*url/:값*/, query/*url?parameter*/, body/*post body*/ } = request;
+	const { method, protocol, httpVersion, headers={}/*{}형태*/, rawHeaders=[]/*[]형태*/, subdomains/*subdomain.xxx.com*/, originalUrl, baseUrl, /*url,*/ path, cookies, params/*url/:값*/, query/*url?parameter*/, body/*post body*/ } = request;
 	const { deviceType=''/*디바이스 타입 */, dataType=''/*응답 데이터 타입*/, everyType=''/*디바이스 또는 응답 데이터 타입*/ } = params;
 	let url = params['0'] ? `http://${params['0']}` : ''; // 요청 URL
 	let search = request._parsedUrl.search; // ?key=value& ... GET 파라미터 
 	
+	//console.log('deviceType', deviceType);
+	//console.log('dataType', dataType);
+	//console.log('everyType', everyType);
 	//console.log('request', request);
 	//console.log('headers', headers);
 	//console.log('cookies', cookies);
 
 	// 유효성 검사 
-	if(!url) {
+	if(page.isClosed()) {
+		// 새로운 페이지 생성해야 한다.
+		// ...
+		return response.send('');
+	}else if(!url) {
 		return response.send('');
 	}
 
 	// 페이지 설정 (과거 페이지 호출당시의 설정 존재 주의)
-	//await pageHeaders(page, headers);
+	await pageHeaders(page, (() => {
+		if(everyType === 'header') {
+			return headers;
+		}
+		const public = ['accept', 'accept-encoding', 'cookie']; // 허용 헤더 
+		return Object.keys(headers).filter(key => public.includes(key) && headers[key]).reduce((accumulator, currentValue, currentIndex, array) => {
+			accumulator[currentValue] = headers[currentValue];
+			return accumulator;
+		}, {});
+	})());
 	//await pageCookies(page, {});
 	//await pageSetting(page, {});
 	if([deviceType, everyType].includes(TYPE_MOBILE)) {
@@ -198,8 +232,9 @@ const route = async (page, request, response) => {
 		}
 	})
 	.catch((error) => {
-		//response.sendStatus(error);
-		response.send(error);
+		console.error(error);
+		response.sendStatus(error);
+		//response.send(error);
 	});
 };
 
@@ -212,7 +247,7 @@ browserOpen()
 	const dataType = [TYPE_JSON, TYPE_TEXT, TYPE_HTML];
 	const handler = (request, response) => route(page, request, response);
 	app.get(`/proxy/:deviceType(${[...deviceType].join('|')})/:dataType(${[...dataType].join('|')})/*`, handler);
-	app.get(`/proxy/:everyType(${[...deviceType, ...dataType].join('|')})/*`, handler);
+	app.get(`/proxy/:everyType(${[...deviceType, ...dataType, 'header'].join('|')})/*`, handler);
 	app.get('/proxy/*', handler);
 });
 
