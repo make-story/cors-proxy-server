@@ -57,10 +57,11 @@ CMD ["node", "servers/proxy.js"]
 #CMD ["yarn", "start"]
 
 # 도커관련 설정(Dockerfile - 현재파일)을 참고해 이미지 생성 명령
-# $ docker build -t cors-proxy-server:dev .
+# $ docker build -t makestory/cors-proxy:latest .
 
-# Docker 이미지 실행 명령
-# $ docker run -v ${PWD}:/app -v /app/node_modules -p 3001:3000은 --rm cors-proxy-server:dev
+# 도커 이미지로 컨테이너 생성/실행
+# $ docker run --name cors-proxy -p 3291:3291 --restart unless-stopped -d makestory/cors-proxy:latest
+
 # 참고: docker run 명령은 우리가 docker build라는 명령으로 생성한 이미지를 바탕으로 도커 컨테이너 인스턴스(Docker Container Instance)를 생성하고 실행
 # 참고: -v ${PWD}:/app은 React 코드를 “/app”에 존재하는 컨테이너에 마운트 합니다.(윈도우는 {PWD}가 작동하지 않을 수 있습니다.)
 # 참고: -v /app/node_modules는 다른 볼륨에서 “node_modules”를 사용하도록 해줍니다.
