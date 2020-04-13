@@ -2,10 +2,21 @@
 로컬 주소가 아니거나,
 CROSS 문제가 발생하는 URL 처리를 위한,
 NodeJS 기반 프록시서버
+
+-
+헤드리스 브라우저 회피 방법
+UA(User-Agent) 값만 넣으면 headless 브라우저로 판별됨
+UA와 accept-language 값을 넣으면 headless 브라우저로 판별됨
+UA와 Accept-Language 값을 넣으면 headless 브라우저가 아닌 일반 브라우저로 판별됨
+즉 대소문자가 중요하다는 것
+
+-
+unhandledRejection Error: Page crashed!
+대부분 메모리 부족 현상 
 */
 const path = require('path'); 
 const fs = require('fs');
-const puppeteer = require("puppeteer"); // 헤드리스 크롬 (https://pptr.dev/) - $ sudo npm install puppeteer --unsafe-perm=true --allow-root
+const puppeteer = require("puppeteer"); // 헤드리스(Headless) 크롬 (https://pptr.dev/) - $ sudo npm install puppeteer --unsafe-perm=true --allow-root
 const express = require('express'); // 너무 무겁다.. Koa 로 변경하자 
 //const cors = require('cors'); // CORS 미들웨어 
 const app = express(); 
@@ -28,10 +39,19 @@ const browserOpen = async () => {
 		args: [
 			'--no-sandbox',
 			'--disable-setuid-sandbox',
+			'--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3803.0 Safari/537.36',
+			'--lang=ko,en-US;q=0.9,en;q=0.8,ko-KR;q=0.7,la;q=0.6',
 		],
 		//executablePath: '/path/to/Chrome', // 다른 버전의 Chrome 또는 Chromium에서 Puppeteer를 사용을 위한 실행 파일 경로
 	});
 	return Promise.resolve(browser);
+};
+const browserIsConnected = browser => browser.isConnected();
+const browserDisconnect = browser => {
+	// 브라우저에서 Puppeteer의 연결을 끊지만 Chromium 프로세스는 실행중인 상태로 둡니다. 
+	if(browserIsConnected(browser)) {
+		browser.disconnect();
+	}
 };
 const browserClose = async browser => {
 	// 브라우저 인스턴스 종료
@@ -41,6 +61,17 @@ const browserContext = async browser => {
 	// 브라우징 콘텍스트 생성하기 (사용자별로 독립된 공간)
 	let browserContext = await browser.createIncognitoBrowserContext();
 	return Promise.resolve(browserContext);
+};
+const browserDefaultBrowserContext = browser => {
+	// 기본 브라우저 컨텍스트를 반환
+	return browser.defaultBrowserContext();
+};
+const browserContextPages = async browserContext => {
+	// 열린 페이지 리스트 배열 반환 (숨김 페이지 제외, background_page)
+	return Promise.resolve(await browserContext.pages());
+};
+const browserContextClose = async browserContext => {
+	return Promise.resolve(await browserContext.close());
 };
 const pageOpen = async browserContext => {
 	// 페이지 생성하기 (탭에 해당)
@@ -53,9 +84,15 @@ const pageOpen = async browserContext => {
 	});*/
 	return Promise.resolve(page);
 };
+const pageIsClosed = page => page.isClosed();
 const pageClose = async page => {
 	return Promise.resolve(await page.close());
 };
+const pageScreenshot = async page => {
+	return Promise.resolve(await page.screenshot({}));
+};
+const pageBrowser = page => page.browser();
+const pageBrowserContext = page => page.browserContext();
 const pageEvent = async page => {
 	// 페이지 이벤트 설정 
 	//page.on('console', msg => console.log(`page console log: ${msg.text()}`)); // 브라우저내 출력되는 콘솔 로그
@@ -66,6 +103,18 @@ const pageEvent = async page => {
 
 		delete headers.host; // 크롬 정책에 따라 host 변경시 에러 발생 
 		//delete headers.origin;
+
+		// 리소스 통제 
+		/*switch(request.resourceType()) {
+			case 'stylesheet':
+			case 'font':
+			case 'image':
+				request.abort();
+				break;
+			default:
+				request.continue();
+				break;
+		}*/
 
 		// setRequestInterception 설정에 따라 멈춤/실행 제어 가능 
 		request.continue({ headers });
@@ -132,6 +181,7 @@ const pageAuthenticate = async (page, credentials={}) => {
 	return Promise.resolve(page);
 };
 const pageSetting = async (page, {scriptTag={}, styleTag={}, offline=false}={}) => {
+	// 페이지 내부 설정
 	await page.addScriptTag(scriptTag); // {url, path, content, type}
 	await page.addStyleTag(styleTag); // {url, path, content}
 	await page.setOfflineMode(offline);
@@ -146,7 +196,8 @@ const pageGoto = async (page, url='') => {
 		//timeout: 0,
 		//referer: '',
 		waitUntil: "networkidle0"
-	});
+	})
+	.catch(e => {});
 	const html = await page.content();
 
 	//console.log(TYPE_HTML, html);
@@ -171,8 +222,8 @@ const pageGoto = async (page, url='') => {
 		return Promise.reject(response.status());
 	}
 };
-const pageEvaluate = async page => {
-	await page.evaluate(() => console.log(`href: ${window.location.href}`)); // 브라우저 내에서 코드 실행
+const pageEvaluate = async (page, call=()=>console.log(`href: ${window.location.href}`)) => {
+	await page.evaluate(call); // 브라우저 내에서 코드 실행
 	return Promise.resolve(page);
 };
 const route = async (page, request, response) => {
