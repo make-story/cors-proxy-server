@@ -11,5 +11,10 @@ const resolveApp = relativePath => path.resolve(appDirectory, relativePath);
 console.log('servers', resolveApp('servers')); // /Users/ysm0203/Development/node/cors-proxy-server.git/servers
 
 module.exports = {
+	resolveApp,
+	//dotenv: resolveApp('.env'),
+	appNodeModules: resolveApp('node_modules'),
+	appPackageJson: resolveApp('package.json'),
+	appPath: resolveApp('.'),
 	appServers: resolveApp('servers'),
 };
