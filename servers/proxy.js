@@ -104,7 +104,7 @@ const pageEvent = async page => {
 		delete headers.host; // 크롬 정책에 따라 host 변경시 에러 발생 
 		//delete headers.origin;
 
-		// 리소스 통제 
+		// setRequestInterception 설정에 따라 멈춤/실행 제어 가능 
 		/*switch(request.resourceType()) {
 			case 'stylesheet':
 			case 'font':
@@ -115,8 +115,6 @@ const pageEvent = async page => {
 				request.continue();
 				break;
 		}*/
-
-		// setRequestInterception 설정에 따라 멈춤/실행 제어 가능 
 		request.continue({ headers });
 	});
 	page.on('requestfailed', (request) => {
