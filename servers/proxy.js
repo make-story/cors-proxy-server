@@ -190,14 +190,19 @@ const pageGoto = async (page, url='') => {
 	//console.log('viewport', page.viewport());
 	
 	// page URL 입력 
-	const response = await page.goto(url, {
-		//timeout: 0,
-		//referer: '',
-		waitUntil: "networkidle0"
-	})
-	.catch(e => {});
+	let response = null;
+	try {
+		response = await page.goto(url, {
+			//timeout: 0,
+			//referer: '',
+			waitUntil: "networkidle0"
+		});
+	}catch(e) {
+		console.log('page goto error!', e);
+		return Promise.reject(404);
+	};
+	
 	const html = await page.content();
-
 	//console.log(TYPE_HTML, html);
 	//console.log('status', response.status()); // 응답 코드 
 	//console.log('headers', response.headers()); // 응답 헤더 
