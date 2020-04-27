@@ -30,6 +30,11 @@ ENV PATH /app/node_modules/.bin:$PATH
 COPY package.json /app/package.json
 #COPY package*.json ./
 
+# UNABLE_TO_VERIFY_LEAF_SIGNATURE 발생할 경우 
+# reason: unable to verify the first certificate
+RUN npm config set strict-ssl false
+RUN yarn config set strict-ssl false
+
 # package.json 의존성 모듈 install
 # RUN 명령어는 배열['npm', 'install'] 형태로도 사용할 수 있습니다.
 # <npm 사용방식>
@@ -58,6 +63,14 @@ CMD ["node", "servers/proxy.js"]
 
 # 도커관련 설정(Dockerfile - 현재파일)을 참고해 이미지 생성 명령
 # $ docker build -t makestory/cors-proxy:latest .
+
+# 참고: 도커 이미지명(REPOSITORY) 변경
+# $ docker image tag <기존 REPOSITORY> <변경 REPOSITORY>
+
+# 참고: 도커저장소 로그인 및 이미지 Push
+# 참고: 'no basic auth credentials' 메시지 발생시 docker 저장소 로그인을 해야함
+# $ docker login <저장소> 
+# $ docker push <이미지명>
 
 # 도커 이미지로 컨테이너 생성/실행
 # $ docker run --name cors-proxy -p 3291:3291 --restart unless-stopped -d makestory/cors-proxy:latest
