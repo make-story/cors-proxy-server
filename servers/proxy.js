@@ -13,6 +13,20 @@ UA와 Accept-Language 값을 넣으면 headless 브라우저가 아닌 일반 �
 -
 unhandledRejection Error: Page crashed!
 대부분 메모리 부족 현상 
+
+-
+API
+https://pptr.dev/#?product=Puppeteer&version=v2.1.1&show=api-class-page
+Page
+https://pptr.dev/#?product=Puppeteer&version=v2.1.1&show=api-class-page
+Request
+https://pptr.dev/#?product=Puppeteer&version=v2.1.1&show=api-class-request
+Response
+https://pptr.dev/#?product=Puppeteer&version=v2.1.1&show=api-class-response
+ElementHandle
+https://pptr.dev/#?product=Puppeteer&version=v2.1.1&show=api-class-elementhandle
+ConsoleMessage
+https://pptr.dev/#?product=Puppeteer&version=v2.1.1&show=api-class-consolemessage
 */
 const path = require('path'); 
 const fs = require('fs');
@@ -42,6 +56,9 @@ const browserOpen = async () => {
 			'--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3803.0 Safari/537.36',
 			'--lang=ko,en-US;q=0.9,en;q=0.8,ko-KR;q=0.7,la;q=0.6',
 		],
+		//devtools: false, // true 로 설정할 경우, headless 옵션이 설정 false 로 변경됨
+		//env: process.env,
+		//defaultViewport: { width : 800, height : 600, deviceScaleFactor: 1, isMobile: false, hasTouch: false, isLandscape: false  }, 
 		//executablePath: '/path/to/Chrome', // 다른 버전의 Chrome 또는 Chromium에서 Puppeteer를 사용을 위한 실행 파일 경로
 	});
 	return Promise.resolve(browser);
@@ -58,7 +75,7 @@ const browserClose = async browser => {
 	return Promise.resolve(await browser.close());
 };
 const browserContext = async browser => {
-	// 브라우징 콘텍스트 생성하기 (사용자별로 독립된 공간)
+	// 새로운 브라우져 콘텍스트 생성하기
 	let browserContext = await browser.createIncognitoBrowserContext();
 	return Promise.resolve(browserContext);
 };
