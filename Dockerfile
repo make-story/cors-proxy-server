@@ -75,14 +75,30 @@ CMD ["node", "servers/proxy.js"]
 # 도커 이미지로 컨테이너 생성/실행
 # $ docker run --name cors-proxy -p 3291:3291 --restart unless-stopped -d makestory/cors-proxy:latest
 
-# 참고: docker run 명령은 우리가 docker build라는 명령으로 생성한 이미지를 바탕으로 도커 컨테이너 인스턴스(Docker Container Instance)를 생성하고 실행
-# 참고: -v ${PWD}:/app은 React 코드를 “/app”에 존재하는 컨테이너에 마운트 합니다.(윈도우는 {PWD}가 작동하지 않을 수 있습니다.)
-# 참고: -v /app/node_modules는 다른 볼륨에서 “node_modules”를 사용하도록 해줍니다.
-# 참고: -p 3001:3000은 포트 옵션입니다. 3000번은 같은 도커 컨테이너 내에서 접근할 수 있는 포트번호, 3001번은 외부에서 접근할 수 있는 포트번호입니다.
-# 참고: --rm 옵션은 컨테이너가 종료되면 자동으로 삭제하라는 의미입니다.
+# 참고: 컨테이너생성/실행 명령
+# docker run 명령은 우리가 docker build 라는 명령으로 생성한 이미지를 바탕으로 도커 컨테이너 인스턴스(Docker Container Instance)를 생성하고 실행하는 명령
+# --name 컨테이너 이름설정 옵션
+# -p 포트설정 옵션 <외부에서 접근할 수 있는 포트번호>:<같은 도커 컨테이너 내에서 접근할 수 있는 포트번호>
+# --restart 컨테이너 자동 재시작관련 설정 옵션
+# -d 백그라운드 모드 실행 옵션
+# --rm 컨테이너가 종료되면 자동으로 삭제하라는 옵션
+# -e 컨테이너 내에서 사용할 환경변수 설정 옵션
+# -v 호스트와 컨테이너의 디렉토리를 연결 (마운트)
+# --link 컨테이너간 IP가 아닌 특정 컨테이너명을 통해 연결
 
 # 이미지 실행 후 정상 접속 확인
-# http://localhost:3001
+# http://localhost:3291/proxy/<외부 RESTful API 주소>
 
-# Docker Compose 사용(docker-compose.yml 파일 - “YAML”파일)하면 더 간단한 방식(docker run 명령 단순화)으로 도커 애플리케이션 정의/실행 가능
+# 참고: Docker Compose 사용(docker-compose.yml 파일 - “YAML”파일)하면 더 간단한 방식(docker run 명령 단순화)으로 도커 애플리케이션 정의/실행 가능
 # $ docker-compose up -d --build
+
+# 컨테이너 로그 확인 (-f tail 명령처럼 로그 실시간 확인 옵션)
+# $ docker logs -f cors-proxy
+
+# 참고: 컨테이너 삭제
+# $ docker ps -a
+# $ docker rm -f <CONTAINER ID>
+
+# 참고: 도커 이미지 삭제
+# $ docker images
+# $ docker rmi -f <IMAGE ID>
