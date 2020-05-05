@@ -209,6 +209,19 @@ const pageGoto = async (page, url='') => {
 	// page URL 입력 
 	let response = null;
 	try {
+		/*
+		waitUntil: 페이지를 호출하고 작업을 진행할 시점을 결정한다.
+			"load" (기본값)
+			load 이벤트가 시작되면 탐색이 완료되는 것으로 간주한다.
+			"domcontentloaded"
+			HTML 문서가 완전히 로드 및 파싱되었을 경우(DOMContentLoaded 이벤트) 탐색이 완료되는 것으로 간주한다.
+			"networkidle0"
+			최소한 500ms 동안 네트워크 연결이 0개 이상 없을때 탐색이 완료되는 것으로 간주한다. 
+			"networkidle2"
+			최소한 500ms 동안 두 개 이상의 네트워 연결이 없을 때 탐색이 완료되는 것으로 간주한다.
+		timeout: 타임아웃
+		referer: 헤더 값
+		*/
 		response = await page.goto(url, {
 			//timeout: 0,
 			//referer: '',
