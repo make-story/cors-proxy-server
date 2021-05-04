@@ -8,7 +8,7 @@
 FROM node:10.9.0-alpine
 # 알파인 버전으로 yarn(또는 npm) install puppeter 설치할 경우, 크롬 브라우저가 작동하지 않을 수 있다. (https://github.com/puppeteer/puppeteer/blob/master/docs/troubleshooting.md)
 # https://github.com/buildkite/docker-puppeteer
-FROM buildkite/puppeteer:latest
+#FROM buildkite/puppeteer:latest
 
 # set working directory - 작업 디렉토리 생성 및 고정
 # Dockerfile의 모든 명령어는 기본적으로 /(루트) 디렉토리에서 실행
@@ -19,29 +19,31 @@ FROM buildkite/puppeteer:latest
 # 3. 왼쪽은 호스트 머신의 파일 경로, 오른쪽은 컨테이너의 파일 경로
 WORKDIR /app
 
-# 환경 변수를 설정합니다. 
-# ENV로 설정한 환경 변수는 RUN, CMD, ENTRYPOINT 에 적용됩니다.
-# `/app/node_modules/.bin`을 $PATH 에 추가
-ENV PATH /app/node_modules/.bin:$PATH
-#ENV PATH="${PATH}:/node_modules/.bin"
-
 # app dependencies, install 및 caching
 # 여기서 왼쪽은 호스트 파일의 경로, 오른쪽은 컨테이너의 파일 경로가 됩니다.
 # 즉, 현재 프로젝트 디렉토리의 package.json이 컨테이너의 app 폴더 아래에 복사됩니다.
 COPY package.json /app/package.json
 #COPY package*.json ./
 
+# 환경 변수를 설정합니다. 
+# ENV로 설정한 환경 변수는 RUN, CMD, ENTRYPOINT 에 적용됩니다.
+# `/app/node_modules/.bin`을 $PATH 에 추가
+ENV PATH /app/node_modules/.bin:$PATH
+#ENV PATH="${PATH}:/node_modules/.bin"
+#ENV TARGET_URL amorepacificmall.com
+
 # UNABLE_TO_VERIFY_LEAF_SIGNATURE 발생할 경우 
 # reason: unable to verify the first certificate
 RUN npm config set strict-ssl false
-RUN yarn config set strict-ssl false
+RUN npm install yarn && yarn config set strict-ssl false
 
 # package.json 의존성 모듈 install
 # RUN 명령어는 배열['npm', 'install'] 형태로도 사용할 수 있습니다.
+#RUN npm -g config set user root
 # <npm 사용방식>
-#RUN npm install --unsafe-perm=true --allow-root
+#RUN npm install
 # <yarn 사용방식>
-RUN npm i -g yarn && yarn install
+RUN yarn install
 
 # nodemon 설치
 #RUN npm install -g nodemon
@@ -56,7 +58,8 @@ COPY . /app/
 
 # 앱 실행
 # CMD 명령은 Dockerfile 에서 한번만 사용 가능
-CMD ["node", "servers/proxy.js"]
+#CMD ["node", "servers/proxy.js"]
+CMD ["node", "servers/proxy-middleware.js"]
 # <npm 사용방식>
 #CMD ["npm", "start"]
 # <yarn 사용방식>
